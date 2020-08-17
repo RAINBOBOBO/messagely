@@ -6,7 +6,6 @@ const bcrypt = require("bcrypt");
 const getformattedStartAt = require("../middleware/getTime");
 
 /** User of the site. */
-//YYYY-MM-DD HH:MI:SS
 
 class User {
   
@@ -20,7 +19,6 @@ class User {
       const hashedPassword = await bcrypt.hash(
         password, BCRYPT_WORK_FACTOR);
       const joinAt = getformattedStartAt();
-      // console.log("This is joinAt", joinAt);
       const result = await db.query(
         `INSERT INTO users (username, password, first_name, last_name, phone, join_at)
         VALUES ($1, $2, $3, $4, $5, $6)
@@ -62,6 +60,21 @@ class User {
   /** Update last_login_at for user */
 
   static async updateLoginTimestamp(username) {
+    console.log(`updateLoginTimestamp ran and username is ${username}`);
+    try {
+      const currentTime = getformattedStartAt();
+      const result = await db.query(
+        `UPDATE users
+        SET last_login_at = $1
+        WHERE username = $2
+        RETURNING username, last_login_at`, 
+        [currentTime, username] 
+      );
+      const user = result.rows[0];
+      console.log(`last login updated for ${username} ${user.last_login_at}`)
+    } catch (err) {
+      console.log(`Couldn't update last login because ${err}`);
+    }
   }
 
   /** All: basic info on all users:
