@@ -36,6 +36,27 @@ class User {
   /** Authenticate: is username/password valid? Returns boolean. */
 
   static async authenticate(username, password) {
+    console.log(`authenticating ${username}`);
+    try {
+      const result = await db.query (
+        `SELECT password
+        FROM users
+        WHERE username = $1`, 
+        [username] 
+      );
+
+      const userFromDB = result.rows[0];
+      console.log("userFromDB is ", userFromDB);
+      
+      if (userFromDB) {
+        if (await bcrypt.compare(password, userFromDB.password) === true) {
+          return true;
+        }
+      }
+      return false;
+    } catch (err) {
+      console.log("UNABLE TO AUTHENTICATE USER : ", err);
+    }
   }
 
   /** Update last_login_at for user */
