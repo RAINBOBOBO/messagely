@@ -1,6 +1,10 @@
 "use strict";
 
+const { messagesFrom } = require("../models/user");
+
 const Router = require("express").Router;
+const { ensureLoggedIn } = require("../middleware/auth");
+const Message = require("../models/message");
 const router = new Router();
 
 /** GET /:id - get detail of message.
@@ -19,10 +23,25 @@ const router = new Router();
 
 /** POST / - post message.
  *
- * {to_username, body} =>
+ * {to_username, body, _token} =>
  *   {message: {id, from_username, to_username, body, sent_at}}
  *
  **/
+
+router.post("/", ensureLoggedIn,  async (req, res, next) => {
+  console.log("posting a new message");
+  try {
+    const from_username = res.locals.user.username;
+    const { to_username, body} = req.body;
+    console.log("from_user", from_username, "to_username", to_username, "body",body );
+
+    const postMessage = await Message.create({ from_username, to_username, body });
+
+    return res.json({ postMessage }) 
+  } catch (err) {
+    return next(err);
+  }
+ })
 
 
 /** POST/:id/read - mark message as read:
