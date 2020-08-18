@@ -51,6 +51,13 @@ describe("Test User class", function () {
   });
 
   test("can get", async function () {
+    /* TEST FAIL: "last_login_at: null"
+    * suspect test failing if test "can update login timestamp" sets ast_login_at=NULL
+    * setting last_login_at before test runs
+     */
+
+    await db.query("UPDATE users SET last_login_at=localtimestamp WHERE username='test'");
+
     let u = await User.get("test");
     expect(u).toEqual({
       username: "test",
