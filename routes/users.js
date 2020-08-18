@@ -3,7 +3,7 @@
 const Router = require("express").Router;
 const router = new Router();
 const User = require("../models/user");
-
+const { ensureCorrectUser } = require("../middleware/auth");
 
 /** GET / - get list of users.
  *
@@ -48,7 +48,7 @@ router.get("/:username", async function(req, res, next) {
  *                 from_user: {username, first_name, last_name, phone}}, ...]}
  *
  **/
-router.get("/:username/to", async function (req, res, next) {
+router.get("/:username/to", ensureCorrectUser, async function (req, res, next) {
     // TODO: import and add ensureCorrectUser middleware
   console.log("getting messages sent to user", req.params.username);
   try {
@@ -71,7 +71,7 @@ router.get("/:username/to", async function (req, res, next) {
  *                 to_user: {username, first_name, last_name, phone}}, ...]}
  *
  **/
-router.get("/:username/from", async function (req, res, next) {
+router.get("/:username/from", ensureCorrectUser, async function (req, res, next) {
   // TODO: import and add ensureCorrectUser middleware
   console.log("getting messages sent from user", req.params.username);
   try {
