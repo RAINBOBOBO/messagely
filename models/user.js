@@ -3,80 +3,67 @@
 const { BCRYPT_WORK_FACTOR } = require("../config");
 const db = require("../db");
 const bcrypt = require("bcrypt");
-const Promise = require("promise");
-const getformattedStartAt = require("../middleware/getTime");
 
 /** User of the site. */
 
 class User {
-  
+
   /** Register new user. Returns
    *    {username, password, first_name, last_name, phone}
    */
 
   static async register({ username, password, first_name, last_name, phone }) {
     console.log("in register function");
-    try {
-      const hashedPassword = await bcrypt.hash(
-        password, BCRYPT_WORK_FACTOR);
-      const joinAt = getformattedStartAt();
-      const result = await db.query(
-        `INSERT INTO users (username, password, first_name, last_name, phone, join_at)
-        VALUES ($1, $2, $3, $4, $5, $6)
-        RETURNING username, first_name, last_name, phone, join_at`,
-        [username, hashedPassword, first_name, last_name, phone, joinAt]);
-      
-      return result.rows[0];
-    } catch (err) {
-      console.log(`Couldn't register user because ${err}`);
-    }
+    const hashedPassword = await bcrypt.hash(
+      password, BCRYPT_WORK_FACTOR);
+    const result = await db.query(
+      `INSERT INTO users (username, password, first_name, last_name, phone, join_at)
+      VALUES ($1, $2, $3, $4, $5, localtimestamp)
+      RETURNING username, first_name, last_name, phone, join_at`,
+      [username, hashedPassword, first_name, last_name, phone]);
+
+    return result.rows[0];
   }
 
   /** Authenticate: is username/password valid? Returns boolean. */
 
   static async authenticate(username, password) {
     console.log(`authenticating ${username}`);
-    try {
-      const result = await db.query (
-        `SELECT password
-        FROM users
-        WHERE username = $1`, 
-        [username] 
-      );
 
-      const userFromDB = result.rows[0];
-      console.log("userFromDB is ", userFromDB);
-      
-      if (userFromDB) {
-        if (await bcrypt.compare(password, userFromDB.password) === true) {
-          return true;
-        }
+    const result = await db.query(
+      `SELECT password
+      FROM users
+      WHERE username = $1`,
+      [username]
+    );
+
+    const userFromDB = result.rows[0];
+    console.log("userFromDB is ", userFromDB);
+
+    if (userFromDB) {
+      if (await bcrypt.compare(password, userFromDB.password) === true) {
+        return true;
       }
-      return false;
-    } catch (err) {
-      console.log("UNABLE TO AUTHENTICATE USER : ", err);
     }
+    return false;
   }
 
-  /** Update last_login_at for user */
+  /** Update last_login_at for user, doesn't return anything */
 
   static async updateLoginTimestamp(username) {
     console.log(`updateLoginTimestamp ran and username is ${username}`);
-    try {
-      const currentTime = getformattedStartAt();
-      const result = await db.query(
-        `UPDATE users
-        SET last_login_at = $1
-        WHERE username = $2
-        RETURNING username, last_login_at`, 
-        [currentTime, username] 
-      );
 
-      const user = result.rows[0];
-      console.log(`last login updated for ${username} ${user.last_login_at}`)
-    } catch (err) {
-      console.log(`Couldn't update last login because ${err}`);
-    }
+    const result = await db.query(
+      `UPDATE users
+      SET last_login_at = current_timestamp
+      WHERE username = $1
+      RETURNING username, last_login_at`,
+      [username]
+    );
+
+    const user = result.rows[0];
+    console.log(`last login updated for ${username} ${user.last_login_at}`)
+
   }
 
   /** All: basic info on all users:
@@ -84,18 +71,15 @@ class User {
 
   static async all() {
     console.log("get basic info on all users");
-    try {
-      const results = await db.query(
-        `SELECT username, first_name, last_name
-        FROM users
-        `
-      )
-      console.log("result.rows", results.rows);
-      // TODO: console.log shows results as [{}, {}], but returns promise
-      return Promise.all(results.rows);
-    } catch (err) {
+    // order results in some way
+    const results = await db.query(
+      `SELECT username, first_name, last_name
+      FROM users
+      `
+    );
+    console.log("result.rows", results.rows);
+    return results.rows;
 
-    }
   }
 
   /** Get: get user by username
