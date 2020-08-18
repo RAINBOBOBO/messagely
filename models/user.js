@@ -3,6 +3,7 @@
 const { BCRYPT_WORK_FACTOR } = require("../config");
 const db = require("../db");
 const bcrypt = require("bcrypt");
+const Message = require("./message");
 
 /** User of the site. */
 
@@ -114,6 +115,30 @@ class User {
    */
 
   static async messagesFrom(username) {
+    console.log("get messages for user", username);
+    // return [{id, to_user, body, sent_at, read_at}]
+    // return [{id, to_user: {username, first_name, last_name, phone}, body, sent_at, read_at}]
+
+    const mResults = await db.query(
+      `SELECT id
+      FROM messages
+      WHERE from_username = $1`, [username]
+    );
+
+    const messagesIds = mResults.rows;
+    console.log("messagesIds for user: ", messagesIds);
+
+    // iterate through each index, Message.get(id), delete from_user key
+    // Message.get(id) => { id, from_user, to_user, body, sent_at, read_at } 
+    // where both to_user and from_user = { username, first_name, last_name, phone }
+    const messagesDetails = messagesIds.map(async (id) => {
+      const message = await Message.get(id);
+      delete message.from_user;
+      return message;
+    })
+
+    return messagesDetails;
+
   }
 
   /** Return messages to this user.
@@ -125,6 +150,29 @@ class User {
    */
 
   static async messagesTo(username) {
+    console.log("get messages to user", username);
+    // return [{id, to_user, body, sent_at, read_at}]
+    // return [{id, to_user: {username, first_name, last_name, phone}, body, sent_at, read_at}]
+
+    const mResults = await db.query(
+      `SELECT id
+      FROM messages
+      WHERE to_username = $1`, [username]
+    );
+
+    const messagesIds = mResults.rows;
+    console.log("messagesIds to user: ", messagesIds);
+
+    // iterate through each index, Message.get(id), delete from_user key
+    // Message.get(id) => { id, from_user, to_user, body, sent_at, read_at } 
+    // where both to_user and from_user = { username, first_name, last_name, phone }
+    const messagesDetails = messagesIds.map(async (id) => {
+      const message = await Message.get(id);
+      delete message.to_user;
+      return message;
+    })
+
+    return messagesDetails;
   }
 }
 
