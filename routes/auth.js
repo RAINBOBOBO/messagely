@@ -6,7 +6,7 @@ const Router = require("express").Router;
 const User = require("../models/user");
 const jwt = require("jsonwebtoken");
 const { SECRET_KEY } = require("../config");
-const { UnauthorizedError } = require("../expressError");
+const { BadRequestError } = require("../expressError");
 
 const router = new Router();
 
@@ -23,7 +23,7 @@ router.post("/login", async (req, res, next) => {
       await User.updateLoginTimestamp(username);
       return res.json({ token });
     }
-    throw new UnauthorizedError("Invalid user/password");
+    throw new BadRequestError("Invalid user/password");
 
   } catch (err) {
     return next(err);
