@@ -20,7 +20,7 @@ class User {
     const result = await db.query(
       `INSERT INTO users (username, password, first_name, last_name, phone, join_at)
       VALUES ($1, $2, $3, $4, $5, localtimestamp)
-      RETURNING username, first_name, last_name, phone, join_at`,
+      RETURNING username, password, first_name, last_name, phone, join_at`,
       [username, hashedPassword, first_name, last_name, phone]);
 
     return result.rows[0];
@@ -116,8 +116,6 @@ class User {
 
   static async messagesFrom(username) {
     console.log("get messages for user", username);
-    // return [{id, to_user, body, sent_at, read_at}]
-    // return [{id, to_user: {username, first_name, last_name, phone}, body, sent_at, read_at}]
 
     const mResults = await db.query(
       `SELECT id
@@ -125,20 +123,31 @@ class User {
       WHERE from_username = $1`, [username]
     );
 
-    const messagesIds = mResults.rows;
-    console.log("messagesIds for user: ", messagesIds);
+    const msgIds = mResults.rows;
+    console.log("messagesIds for user: ", msgIds);
 
-    // iterate through each index, Message.get(id), delete from_user key
-    // Message.get(id) => { id, from_user, to_user, body, sent_at, read_at } 
-    // where both to_user and from_user = { username, first_name, last_name, phone }
-    const messagesDetails = messagesIds.map(async (id) => {
-      const message = await Message.get(id);
+    // TODO: Ask for tips with using .map() with promises; returns promises, not sure how to resolve
+    // trying .map() but just returning a promise, TODO: how to map with promises 
+    // const messagesDetails = await messagesIds.map(async (msg) => {
+    // console.log("mapping this id", msg.id)
+    //   const message = await Message.get(msg.id);
+    //   delete message.from_user;
+    //   // console.log("msg id", msg, "message", message);
+    //   return message;
+    // })
+
+    let msgDetails = [];
+
+    for (let msg of msgIds) {
+      const message = await Message.get(msg.id);
       delete message.from_user;
-      return message;
-    })
+      msgDetails.push(message);
+    }
 
-    return messagesDetails;
 
+    console.log("messagesDetails", msgDetails);
+
+    return msgDetails;
   }
 
   /** Return messages to this user.
@@ -151,8 +160,6 @@ class User {
 
   static async messagesTo(username) {
     console.log("get messages to user", username);
-    // return [{id, to_user, body, sent_at, read_at}]
-    // return [{id, to_user: {username, first_name, last_name, phone}, body, sent_at, read_at}]
 
     const mResults = await db.query(
       `SELECT id
@@ -160,19 +167,17 @@ class User {
       WHERE to_username = $1`, [username]
     );
 
-    const messagesIds = mResults.rows;
-    console.log("messagesIds to user: ", messagesIds);
+    const msgIds = mResults.rows;
+    console.log("messagesIds to user: ", msgIds);
 
-    // iterate through each index, Message.get(id), delete from_user key
-    // Message.get(id) => { id, from_user, to_user, body, sent_at, read_at } 
-    // where both to_user and from_user = { username, first_name, last_name, phone }
-    const messagesDetails = messagesIds.map(async (id) => {
-      const message = await Message.get(id);
+    let msgDetails = [];
+
+    for (let msg of msgIds) {
+      const message = await Message.get(msg.id);
       delete message.to_user;
-      return message;
-    })
-
-    return messagesDetails;
+      msgDetails.push(message);
+    }
+    return msgDetails;
   }
 }
 
