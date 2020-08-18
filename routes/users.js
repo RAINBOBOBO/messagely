@@ -2,6 +2,7 @@
 
 const Router = require("express").Router;
 const router = new Router();
+const User = require("../models/user");
 
 
 /** GET / - get list of users.
@@ -9,6 +10,15 @@ const router = new Router();
  * => {users: [{username, first_name, last_name, phone}, ...]}
  *
  **/
+router.get("/", async function(req, res, next) {
+  try {
+    const users = await User.all();
+
+    return res.json({users});
+  } catch (err) {
+    return next(err);
+  }
+})
 
 
 /** GET /:username - get detail of users.
@@ -16,6 +26,17 @@ const router = new Router();
  * => {user: {username, first_name, last_name, phone, join_at, last_login_at}}
  *
  **/
+router.get("/:username", async function(req, res, next) {
+  try {
+    const { username } = req.params;
+    const user = await User.get(username);
+    // console.log("this is user after awaiting:", user);
+
+    return res.json({user});
+  } catch (err) {
+    return next(err);
+  }
+});
 
 
 /** GET /:username/to - get messages to user

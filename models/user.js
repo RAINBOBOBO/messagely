@@ -92,6 +92,17 @@ class User {
    *          last_login_at } */
 
   static async get(username) {
+    console.log("get user by username", username);
+    const result = await db.query(
+      `SELECT username, first_name, last_name, phone, join_at, last_login_at
+      FROM users
+      WHERE username = $1`,
+      [username]
+    );
+
+    const user = result.rows[0];
+    // console.log("this is user:", user)
+    return user;
   }
 
   /** Return messages from this user.
