@@ -3,6 +3,7 @@
 const { BCRYPT_WORK_FACTOR } = require("../config");
 const db = require("../db");
 const bcrypt = require("bcrypt");
+const Promise = require("promise");
 const getformattedStartAt = require("../middleware/getTime");
 
 /** User of the site. */
@@ -70,6 +71,7 @@ class User {
         RETURNING username, last_login_at`, 
         [currentTime, username] 
       );
+
       const user = result.rows[0];
       console.log(`last login updated for ${username} ${user.last_login_at}`)
     } catch (err) {
@@ -81,6 +83,19 @@ class User {
    * [{username, first_name, last_name}, ...] */
 
   static async all() {
+    console.log("get basic info on all users");
+    try {
+      const results = await db.query(
+        `SELECT username, first_name, last_name
+        FROM users
+        `
+      )
+      console.log("result.rows", results.rows);
+      // TODO: console.log shows results as [{}, {}], but returns promise
+      return Promise.all(results.rows);
+    } catch (err) {
+
+    }
   }
 
   /** Get: get user by username
